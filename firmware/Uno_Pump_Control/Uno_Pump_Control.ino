@@ -20,10 +20,11 @@
 #define DIR_PUMP  2
 #define ENA_PUMP  A1
 
-#define PRESS_SWITCH_PIN A3
+#define PRESS_SWITCH_PIN A2
 
 // ---------------- LIMITS / DEFAULTS ----------------
 const long DEFAULT_PUMP_STEPS = 32000;
+const long PURGE_STEPS = 15000;
 const unsigned long DEFAULT_PUMP_SPEED_US = 210;
 
 const long MIN_PUMP_STEPS = 10;
@@ -50,6 +51,7 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 // ---------------- TIMING ----------------
 const unsigned long DEBOUNCE_MS = 50;
 const unsigned long POST_RUN_LOCKOUT_MS = 500;
+const unsigned long PURGE_HOLD_MS = 3000;
 
 const uint32_t CONFIG_MAGIC = 0x50554D50UL; // "PUMP"
 const int EEPROM_ADDR = 0;
@@ -72,11 +74,14 @@ enum State
 State machineState = IDLE;
 
 long pumpStepsDone = 0;
+long activeRunSteps = DEFAULT_PUMP_STEPS;
 unsigned long lastPumpPulse = 0;
 unsigned long runEndedAt = 0;
 
 bool switchPrev = HIGH;
 bool switchArmed = false;
+bool switchPressActive = false;
+unsigned long switchPressedAt = 0;
 
 String serialLine = "";
 
@@ -143,6 +148,8 @@ inline void pulseStep(uint8_t pin)
 
 void startPumpRun()
 {
+  activeRunSteps = config.steps;
+
   if (machineState != IDLE)
   {
     Serial.println("ERR BUSY");
@@ -159,6 +166,28 @@ void startPumpRun()
   machineState = RUN_PUMP;
 
   Serial.println("RUN START");
+}
+
+void startPumpRunFixed(long fixedSteps)
+{
+  if (machineState != IDLE)
+  {
+    Serial.println("ERR BUSY");
+    return;
+  }
+
+  enablePumpDriver();
+
+  activeRunSteps = fixedSteps;
+  pumpStepsDone = 0;
+  lastPumpPulse = micros();
+
+  digitalWrite(DIR_PUMP, PUMP_DIR_CW);
+
+  machineState = RUN_PUMP;
+
+  Serial.print("PURGE START STEPS=");
+  Serial.println(activeRunSteps);
 }
 
 void stopPumpRun()
@@ -186,9 +215,15 @@ void handlePressSwitch(unsigned long nowMs)
   if (switchNow == HIGH)
     switchArmed = true;
 
-  if (machineState == IDLE &&
-      switchArmed &&
-      (nowMs - runEndedAt) >= POST_RUN_LOCKOUT_MS &&
+  if (machineState != IDLE ||
+      !switchArmed ||
+      (nowMs - runEndedAt) < POST_RUN_LOCKOUT_MS)
+  {
+    switchPrev = switchNow;
+    return;
+  }
+
+  if (!switchPressActive &&
       switchPrev == HIGH &&
       switchNow == SWITCH_PRESSED)
   {
@@ -196,8 +231,35 @@ void handlePressSwitch(unsigned long nowMs)
 
     if (digitalRead(PRESS_SWITCH_PIN) == SWITCH_PRESSED)
     {
+      switchPressActive = true;
+      switchPressedAt = millis();
+      Serial.println("SWITCH PRESSED");
+    }
+  }
+
+  if (switchPressActive &&
+      switchPrev == SWITCH_PRESSED &&
+      switchNow == HIGH)
+  {
+    delay(DEBOUNCE_MS);
+
+    if (digitalRead(PRESS_SWITCH_PIN) == HIGH)
+    {
+      unsigned long heldMs = nowMs - switchPressedAt;
+
+      switchPressActive = false;
       switchArmed = false;
-      startPumpRun();
+
+      if (heldMs >= PURGE_HOLD_MS)
+      {
+        Serial.println("SWITCH LONG PRESS - PURGE");
+        startPumpRunFixed(PURGE_STEPS);
+      }
+      else
+      {
+        Serial.println("SWITCH SHORT PRESS - RUN");
+        startPumpRun();
+      }
     }
   }
 
@@ -209,7 +271,7 @@ void servicePump(unsigned long nowMicros)
   if (machineState != RUN_PUMP)
     return;
 
-  if (pumpStepsDone < config.steps)
+  if (pumpStepsDone < activeRunSteps)
   {
     if (nowMicros - lastPumpPulse >= config.speedUs)
     {
@@ -247,6 +309,12 @@ void handleCommand(String line)
   if (line == "RUN")
   {
     startPumpRun();
+    return;
+  }
+
+  if (line == "PURGE")
+  {
+    startPumpRunFixed(PURGE_STEPS);
     return;
   }
 

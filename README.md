@@ -2,13 +2,15 @@
 
 Control station for a Prokera filling pump using an Arduino UNO, a CL42T stepper driver, a physical press switch, and a Windows graphical control panel.
 
-## Version 2.0.0
+## Version 3.0.0
 
-Version 2 adds a silent launcher:
+Version 3 adds purge controls:
 
-- `windows-app/Run_UnoPumpControl_Silent.vbs`
+- `PURGE` app button: fixed 15000 steps using the current speed.
+- Physical press switch short press: normal run.
+- Physical press switch long press, 3 seconds or more: purge run.
 
-Use this launcher when you want only the button window to appear, without the PowerShell console.
+The purge run does not overwrite the normal configured step count.
 
 ## Contents
 
@@ -31,8 +33,6 @@ Use 5V for the CL42T signal inputs when wiring directly to the UNO.
 | `ENA-` | `A1` |
 | Press switch | `A3` and `GND` |
 
-If the CL42T is enabled by default, you can test with `ENA+` and `ENA-` disconnected first.
-
 Do not use 24V directly with Arduino pins. For direct UNO-to-CL42T wiring, use 5V on `PUL+`, `DIR+`, and `ENA+`.
 
 ## How To Use
@@ -44,8 +44,14 @@ Do not use 24V directly with Arduino pins. For direct UNO-to-CL42T wiring, use 5
 5. Run `windows-app/Run_UnoPumpControl_Silent.vbs`.
 6. Select the UNO COM port and press `Connect`.
 7. Set `Steps` and `Speed us`.
-8. Press the large `RUN` button to run with the values shown on screen.
-9. Use `Save` only when you want to save values in the UNO without running the pump.
+8. Press `RUN` for a normal run.
+9. Press `PURGE` for 15000 fixed steps.
+
+## Physical Press Switch
+
+- Less than 3 seconds: normal run.
+- 3 seconds or more: purge, fixed 15000 steps.
+- The action starts when the switch is released.
 
 ## Serial Commands
 
@@ -57,6 +63,7 @@ SET STEPS 32000
 SET SPEED 210
 RUN
 RUN 32000 210
+PURGE
 STOP
 PING
 ```

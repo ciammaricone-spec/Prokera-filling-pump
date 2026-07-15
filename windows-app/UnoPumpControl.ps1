@@ -6,16 +6,21 @@ $script:port = $null
 $script:lastSteps = 32000
 $script:lastSpeed = 210
 $script:lastDone = 0
+$script:purgeMode = $false
 
 $colorBg = [System.Drawing.Color]::FromArgb(22, 25, 30)
 $colorPanel = [System.Drawing.Color]::FromArgb(34, 39, 46)
 $colorPanel2 = [System.Drawing.Color]::FromArgb(43, 49, 58)
 $colorText = [System.Drawing.Color]::FromArgb(235, 240, 245)
 $colorMuted = [System.Drawing.Color]::FromArgb(150, 162, 176)
+$colorWhite = [System.Drawing.Color]::White
 $colorGreen = [System.Drawing.Color]::FromArgb(46, 204, 113)
 $colorYellow = [System.Drawing.Color]::FromArgb(245, 166, 35)
+$colorOrange = [System.Drawing.Color]::FromArgb(242, 133, 30)
 $colorRed = [System.Drawing.Color]::FromArgb(235, 87, 87)
 $colorBlue = [System.Drawing.Color]::FromArgb(74, 144, 226)
+$colorRunText = [System.Drawing.Color]::FromArgb(12, 25, 16)
+$colorReadText = [System.Drawing.Color]::FromArgb(35, 24, 4)
 
 function New-Label {
     param(
@@ -49,7 +54,18 @@ function Style-Button {
     )
 
     $Button.FlatStyle = "Flat"
+    $Button.UseVisualStyleBackColor = $false
     $Button.FlatAppearance.BorderSize = 0
+    $Button.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(
+        [Math]::Min(255, $Back.R + 18),
+        [Math]::Min(255, $Back.G + 18),
+        [Math]::Min(255, $Back.B + 18)
+    )
+    $Button.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(
+        [Math]::Max(0, $Back.R - 18),
+        [Math]::Max(0, $Back.G - 18),
+        [Math]::Max(0, $Back.B - 18)
+    )
     $Button.BackColor = $Back
     $Button.ForeColor = $Fore
     $Button.Font = New-Object System.Drawing.Font("Segoe UI", $Size, ([System.Drawing.FontStyle]::$Weight))
@@ -153,7 +169,7 @@ function Send-Command {
 function Apply-StatusLine {
     param([string]$Line)
 
-    if ($Line -match "STEPS=(\d+)") {
+    if (-not $script:purgeMode -and $Line -match "STEPS=(\d+)") {
         $script:lastSteps = [int]$matches[1]
         if ($script:lastSteps -ge $numSteps.Minimum -and $script:lastSteps -le $numSteps.Maximum) {
             $numSteps.Value = [decimal]$script:lastSteps
@@ -175,6 +191,7 @@ function Apply-StatusLine {
         if ($Line -match "RUN COMPLETE") {
             $script:lastDone = $script:lastSteps
         }
+        $script:purgeMode = $false
         Set-DisplayState "IDLE" $colorGreen
     }
     elseif ($Line -match "STATUS RUNNING|RUN START") {
@@ -218,11 +235,21 @@ function Set-ConnectedUi {
     $btnConnect.Enabled = -not $Connected
     $btnDisconnect.Enabled = $Connected
     $btnSet.Enabled = $Connected
-    $btnGet.Enabled = $Connected
-    $btnRun.Enabled = $Connected
-    $btnStop.Enabled = $Connected
+    $btnGet.Enabled = $true
+    $btnRun.Enabled = $true
+    $btnPurge.Enabled = $true
+    $btnStop.Enabled = $true
     $comboPorts.Enabled = -not $Connected
     $btnRefresh.Enabled = -not $Connected
+
+    Style-Button $btnRun $colorGreen $colorRunText 18 "Bold"
+    Style-Button $btnPurge $colorOrange $colorWhite 12 "Bold"
+    Style-Button $btnGet $colorYellow $colorReadText 10 "Bold"
+    Style-Button $btnStop $colorRed $colorWhite 12 "Bold"
+    $btnRun.Invalidate()
+    $btnPurge.Invalidate()
+    $btnGet.Invalidate()
+    $btnStop.Invalidate()
 
     if (-not $Connected) {
         Set-DisplayState "DISCONNECTED" $colorMuted
@@ -328,7 +355,7 @@ $btnDisconnect = New-Object System.Windows.Forms.Button
 $btnDisconnect.Text = "Disconnect"
 $btnDisconnect.Location = New-Object System.Drawing.Point(670, 16)
 $btnDisconnect.Size = New-Object System.Drawing.Size(90, 30)
-Style-Button $btnDisconnect $colorPanel2 $colorText 9 "Regular"
+Style-Button $btnDisconnect $colorOrange $colorWhite 9 "Bold"
 $btnDisconnect.Enabled = $false
 $btnDisconnect.Add_Click({ Disconnect-Port })
 $header.Controls.Add($btnDisconnect)
@@ -432,8 +459,8 @@ $form.Controls.Add($buttonsPanel)
 $btnRun = New-Object System.Windows.Forms.Button
 $btnRun.Text = "RUN"
 $btnRun.Location = New-Object System.Drawing.Point(18, 14)
-$btnRun.Size = New-Object System.Drawing.Size(170, 48)
-Style-Button $btnRun $colorGreen [System.Drawing.Color]::FromArgb(12, 25, 16) 18 "Bold"
+$btnRun.Size = New-Object System.Drawing.Size(128, 48)
+Style-Button $btnRun $colorGreen $colorRunText 18 "Bold"
 $btnRun.Enabled = $false
 $btnRun.Add_Click({
     $script:lastSteps = [int]$numSteps.Value
@@ -444,10 +471,28 @@ $btnRun.Add_Click({
 })
 $buttonsPanel.Controls.Add($btnRun)
 
+$btnPurge = New-Object System.Windows.Forms.Button
+$btnPurge.Text = "PURGE"
+$btnPurge.Location = New-Object System.Drawing.Point(160, 14)
+$btnPurge.Size = New-Object System.Drawing.Size(128, 48)
+Style-Button $btnPurge $colorOrange $colorWhite 12 "Bold"
+$btnPurge.Enabled = $false
+$btnPurge.Add_Click({
+    $script:purgeMode = $true
+    $script:lastSteps = 15000
+    $script:lastSpeed = [int]$numSpeed.Value
+    $script:lastDone = 0
+    Update-DisplayValues
+    Send-Command ("SET SPEED " + [int]$numSpeed.Value)
+    Start-Sleep -Milliseconds 100
+    Send-Command "PURGE"
+})
+$buttonsPanel.Controls.Add($btnPurge)
+
 $btnStop = New-Object System.Windows.Forms.Button
 $btnStop.Text = "STOP"
-$btnStop.Location = New-Object System.Drawing.Point(202, 14)
-$btnStop.Size = New-Object System.Drawing.Size(150, 48)
+$btnStop.Location = New-Object System.Drawing.Point(302, 14)
+$btnStop.Size = New-Object System.Drawing.Size(128, 48)
 Style-Button $btnStop $colorRed
 $btnStop.Enabled = $false
 $btnStop.Add_Click({ Send-Command "STOP" })
@@ -455,8 +500,8 @@ $buttonsPanel.Controls.Add($btnStop)
 
 $btnSet = New-Object System.Windows.Forms.Button
 $btnSet.Text = "Save"
-$btnSet.Location = New-Object System.Drawing.Point(390, 18)
-$btnSet.Size = New-Object System.Drawing.Size(95, 40)
+$btnSet.Location = New-Object System.Drawing.Point(448, 18)
+$btnSet.Size = New-Object System.Drawing.Size(78, 40)
 Style-Button $btnSet $colorBlue
 $btnSet.Enabled = $false
 $btnSet.Add_Click({
@@ -468,20 +513,25 @@ $buttonsPanel.Controls.Add($btnSet)
 
 $btnGet = New-Object System.Windows.Forms.Button
 $btnGet.Text = "Read UNO"
-$btnGet.Location = New-Object System.Drawing.Point(500, 18)
-$btnGet.Size = New-Object System.Drawing.Size(110, 40)
-Style-Button $btnGet $colorPanel2 $colorText 10 "Regular"
+$btnGet.Location = New-Object System.Drawing.Point(540, 18)
+$btnGet.Size = New-Object System.Drawing.Size(96, 40)
+Style-Button $btnGet $colorYellow $colorReadText 10 "Bold"
 $btnGet.Enabled = $false
 $btnGet.Add_Click({ Send-Command "GET" })
 $buttonsPanel.Controls.Add($btnGet)
 
 $btnClear = New-Object System.Windows.Forms.Button
 $btnClear.Text = "Clear Log"
-$btnClear.Location = New-Object System.Drawing.Point(625, 18)
-$btnClear.Size = New-Object System.Drawing.Size(95, 40)
+$btnClear.Location = New-Object System.Drawing.Point(650, 18)
+$btnClear.Size = New-Object System.Drawing.Size(78, 40)
 Style-Button $btnClear $colorPanel2 $colorText 10 "Regular"
 $btnClear.Add_Click({ $logBox.Clear() })
 $buttonsPanel.Controls.Add($btnClear)
+
+$lblSignature = New-Label "--- V1-0 Peristaltic filling by G.C." 500 500 260 22 10 $colorMuted "Regular"
+$lblSignature.TextAlign = "MiddleRight"
+$lblSignature.Anchor = "Right,Bottom"
+$form.Controls.Add($lblSignature)
 
 $logBox = New-Object System.Windows.Forms.TextBox
 $logBox.Location = New-Object System.Drawing.Point(20, 512)
@@ -498,6 +548,7 @@ $form.Controls.Add($logBox)
 
 $form.Add_Shown({
     $form.Height = 675
+    $lblSignature.Location = New-Object System.Drawing.Point(($form.ClientSize.Width - 320), 500)
     $logBox.Location = New-Object System.Drawing.Point(20, 512)
     $logBox.Size = New-Object System.Drawing.Size(($form.ClientSize.Width - 40), 112)
 })
@@ -506,6 +557,7 @@ $form.Add_Resize({
     $header.Width = $form.ClientSize.Width
     $displayPanel.Width = $form.ClientSize.Width - 40
     $buttonsPanel.Width = $form.ClientSize.Width - 40
+    $lblSignature.Location = New-Object System.Drawing.Point(($form.ClientSize.Width - 320), 500)
     $logBox.Width = $form.ClientSize.Width - 40
     $logBox.Height = [Math]::Max(80, $form.ClientSize.Height - 532)
 })
