@@ -2,13 +2,21 @@
 
 Control station for a Prokera filling pump using an Arduino UNO, a CL42T stepper driver, a physical press switch, and a Windows graphical control panel.
 
-## Version 3.0.0
+## Version 3.1.0
 
-Version 3 adds purge controls:
+Version 3.1 updates the UI branding and keeps the v3 purge behavior.
 
-- `PURGE` app button: fixed 15000 steps using the current speed.
+Active sketch/app label:
+
+`V3-0 Peristaltic filling by G.C.`
+
+Includes:
+
+- PURGE app button: fixed 15000 steps using the current speed.
 - Physical press switch short press: normal run.
 - Physical press switch long press, 3 seconds or more: purge run.
+- Silent VBS launcher so the PowerShell console stays hidden.
+- Updated title/header/signature text.
 
 The purge run does not overwrite the normal configured step count.
 

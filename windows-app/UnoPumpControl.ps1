@@ -7,6 +7,7 @@ $script:lastSteps = 32000
 $script:lastSpeed = 210
 $script:lastDone = 0
 $script:purgeMode = $false
+$appTitle = "V3-0 Peristaltic filling by G.C."
 
 $colorBg = [System.Drawing.Color]::FromArgb(22, 25, 30)
 $colorPanel = [System.Drawing.Color]::FromArgb(34, 39, 46)
@@ -309,35 +310,35 @@ function Disconnect-Port {
 }
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "UNO Pump Control"
-$form.Size = New-Object System.Drawing.Size(780, 560)
+$form.Text = $appTitle
+$form.Size = New-Object System.Drawing.Size(980, 675)
 $form.StartPosition = "CenterScreen"
-$form.MinimumSize = New-Object System.Drawing.Size(780, 560)
+$form.MinimumSize = New-Object System.Drawing.Size(980, 675)
 $form.BackColor = $colorBg
 $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 
 $header = New-Object System.Windows.Forms.Panel
 $header.Location = New-Object System.Drawing.Point(0, 0)
-$header.Size = New-Object System.Drawing.Size(780, 62)
+$header.Size = New-Object System.Drawing.Size(980, 62)
 $header.BackColor = [System.Drawing.Color]::FromArgb(16, 18, 22)
 $header.Anchor = "Top,Left,Right"
 $form.Controls.Add($header)
 
-$title = New-Label "UNO Pump Control" 20 14 260 32 18 $colorText "Bold"
+$title = New-Label $appTitle 20 14 460 32 16 $colorText "Bold"
 $header.Controls.Add($title)
 
-$lblPort = New-Label "COM" 340 20 38 24 10 $colorMuted
+$lblPort = New-Label "COM" 500 20 38 24 10 $colorMuted
 $header.Controls.Add($lblPort)
 
 $comboPorts = New-Object System.Windows.Forms.ComboBox
 $comboPorts.DropDownStyle = "DropDownList"
-$comboPorts.Location = New-Object System.Drawing.Point(380, 17)
+$comboPorts.Location = New-Object System.Drawing.Point(540, 17)
 $comboPorts.Size = New-Object System.Drawing.Size(100, 28)
 $header.Controls.Add($comboPorts)
 
 $btnRefresh = New-Object System.Windows.Forms.Button
 $btnRefresh.Text = "Refresh"
-$btnRefresh.Location = New-Object System.Drawing.Point(488, 16)
+$btnRefresh.Location = New-Object System.Drawing.Point(648, 16)
 $btnRefresh.Size = New-Object System.Drawing.Size(82, 30)
 Style-Button $btnRefresh $colorPanel2 $colorText 9 "Regular"
 $btnRefresh.Add_Click({ Refresh-Ports })
@@ -345,7 +346,7 @@ $header.Controls.Add($btnRefresh)
 
 $btnConnect = New-Object System.Windows.Forms.Button
 $btnConnect.Text = "Connect"
-$btnConnect.Location = New-Object System.Drawing.Point(580, 16)
+$btnConnect.Location = New-Object System.Drawing.Point(740, 16)
 $btnConnect.Size = New-Object System.Drawing.Size(82, 30)
 Style-Button $btnConnect $colorBlue
 $btnConnect.Add_Click({ Connect-Port })
@@ -353,7 +354,7 @@ $header.Controls.Add($btnConnect)
 
 $btnDisconnect = New-Object System.Windows.Forms.Button
 $btnDisconnect.Text = "Disconnect"
-$btnDisconnect.Location = New-Object System.Drawing.Point(670, 16)
+$btnDisconnect.Location = New-Object System.Drawing.Point(830, 16)
 $btnDisconnect.Size = New-Object System.Drawing.Size(90, 30)
 Style-Button $btnDisconnect $colorOrange $colorWhite 9 "Bold"
 $btnDisconnect.Enabled = $false
@@ -362,7 +363,7 @@ $header.Controls.Add($btnDisconnect)
 
 $displayPanel = New-Object System.Windows.Forms.Panel
 $displayPanel.Location = New-Object System.Drawing.Point(20, 82)
-$displayPanel.Size = New-Object System.Drawing.Size(740, 132)
+$displayPanel.Size = New-Object System.Drawing.Size(940, 132)
 $displayPanel.BackColor = [System.Drawing.Color]::FromArgb(44, 44, 44)
 $displayPanel.Anchor = "Top,Left,Right"
 $form.Controls.Add($displayPanel)
@@ -452,7 +453,7 @@ $readoutPanel.Controls.Add($lblDoneValue)
 
 $buttonsPanel = New-Object System.Windows.Forms.Panel
 $buttonsPanel.Location = New-Object System.Drawing.Point(20, 420)
-$buttonsPanel.Size = New-Object System.Drawing.Size(740, 76)
+$buttonsPanel.Size = New-Object System.Drawing.Size(940, 76)
 $buttonsPanel.BackColor = $colorPanel
 $form.Controls.Add($buttonsPanel)
 
@@ -528,14 +529,14 @@ Style-Button $btnClear $colorPanel2 $colorText 10 "Regular"
 $btnClear.Add_Click({ $logBox.Clear() })
 $buttonsPanel.Controls.Add($btnClear)
 
-$lblSignature = New-Label "--- V1-0 Peristaltic filling by G.C." 500 500 260 22 10 $colorMuted "Regular"
+$lblSignature = New-Label ("--- " + $appTitle) 500 500 260 22 10 $colorMuted "Regular"
 $lblSignature.TextAlign = "MiddleRight"
 $lblSignature.Anchor = "Right,Bottom"
 $form.Controls.Add($lblSignature)
 
 $logBox = New-Object System.Windows.Forms.TextBox
 $logBox.Location = New-Object System.Drawing.Point(20, 512)
-$logBox.Size = New-Object System.Drawing.Size(740, 0)
+$logBox.Size = New-Object System.Drawing.Size(940, 0)
 $logBox.Multiline = $true
 $logBox.ScrollBars = "Vertical"
 $logBox.ReadOnly = $true

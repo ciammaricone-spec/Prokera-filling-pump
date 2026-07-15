@@ -15,6 +15,8 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
+#define FW_VERSION "V3-0 Peristaltic filling by G.C."
+
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP A5
 #define DIR_PUMP  2
@@ -436,6 +438,7 @@ void setup()
 
   Serial.println("");
   Serial.println("UNO_PUMP READY");
+  Serial.println(FW_VERSION);
   printStatus();
 }
 
