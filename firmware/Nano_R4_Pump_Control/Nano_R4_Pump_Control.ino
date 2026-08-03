@@ -63,6 +63,7 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 
 // ---------------- TIMING ----------------
 const unsigned long DEBOUNCE_MS = 50;
+const unsigned long MIN_SWITCH_PRESS_MS = 120;
 const unsigned long POST_RUN_LOCKOUT_MS = 500;
 const unsigned long PURGE_HOLD_MS = 3000;
 
@@ -255,10 +256,17 @@ void handlePressSwitch(unsigned long nowMs)
 
     if (digitalRead(PRESS_SWITCH_PIN) == HIGH)
     {
-      unsigned long heldMs = nowMs - switchPressedAt;
+      unsigned long heldMs = millis() - switchPressedAt;
 
       switchPressActive = false;
       switchArmed = false;
+
+      if (heldMs < MIN_SWITCH_PRESS_MS)
+      {
+        Serial.println("SWITCH IGNORED");
+        switchPrev = HIGH;
+        return;
+      }
 
       if (heldMs >= PURGE_HOLD_MS)
       {

@@ -67,3 +67,10 @@ If the test does not move:
 5. Verify CL42T motor power, alarm status, and motor wiring.
 
 If the test moves, upload `Nano_R4_Pump_Control.ino` and use the Windows app.
+
+## Operation
+
+- Short press the physical switch to run the saved step count.
+- Hold the physical switch for 3 seconds or more to purge 15000 steps.
+- Very short switch pulses are ignored to prevent false starts.
+- USB RUN and PURGE controls work when the Windows app is connected.

@@ -13,7 +13,7 @@ Includes:
 - Arduino Nano R4 firmware.
 - Windows graphical pump control app.
 - RUN, PURGE, STOP, Save, Read, and Clear Log controls.
-- PURGE app button: fixed 15000 steps using the current speed.
+- USB RUN/PURGE commands work when the Windows app is connected.
 - Physical press switch short press: normal run.
 - Physical press switch long press, 3 seconds or more: purge run.
 - Silent VBS launcher so the PowerShell console stays hidden.
@@ -65,6 +65,7 @@ Do not use 24V directly with Arduino pins. For direct Arduino-to-CL42T wiring, u
 - Less than 3 seconds: normal run.
 - 3 seconds or more: purge, fixed 15000 steps.
 - The action starts when the switch is released.
+- Very short pulses are ignored to prevent false starts from switch noise.
 
 ## Serial Commands
 
