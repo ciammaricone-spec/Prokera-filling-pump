@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-1 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-2 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP A5
@@ -49,17 +49,18 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 #define STEP_IDLE_LEVEL HIGH
 #define STEP_ACTIVE_LEVEL LOW
 
-// ENA optional:
-// With ENA+ tied to +5V, keeping ENA- HIGH leaves ENA inactive.
-// Many CL42T drivers are enabled by default when ENA is inactive.
-#define DRIVER_ENABLE_LEVEL HIGH
+// ENA is forced active so the CL42T stays enabled at all times.
+// Common-anode input: ENA+ -> +5V, ENA- -> ENA_PUMP.
+#define DRIVER_ENABLE_LEVEL LOW
 #define DRIVER_DISABLE_LEVEL LOW
 
 // If pump turns the wrong way, change this to LOW.
 #define PUMP_DIR_CW HIGH
 
 // ---------------- INPUT LOGIC ----------------
-#define SWITCH_PRESSED LOW
+// Learns the released switch level at startup so NO or NC contacts work.
+bool switchReleasedLevel = HIGH;
+bool switchPressedLevel = LOW;
 
 // ---------------- TIMING ----------------
 const unsigned long DEBOUNCE_MS = 50;
@@ -247,7 +248,7 @@ void handlePressSwitch(unsigned long nowMs)
 
   if (!switchArmed)
   {
-    if (switchNow == HIGH &&
+    if (switchNow == switchReleasedLevel &&
         (nowMs - switchLastRawChangeAt) >= SWITCH_ARM_RELEASE_MS)
     {
       switchArmed = true;
@@ -259,8 +260,8 @@ void handlePressSwitch(unsigned long nowMs)
   }
 
   if (!switchPressActive &&
-      switchPrev == HIGH &&
-      switchNow == SWITCH_PRESSED)
+      switchPrev == switchReleasedLevel &&
+      switchNow == switchPressedLevel)
   {
     switchPressActive = true;
     switchPressedAt = nowMs;
@@ -268,8 +269,8 @@ void handlePressSwitch(unsigned long nowMs)
   }
 
   if (switchPressActive &&
-      switchPrev == SWITCH_PRESSED &&
-      switchNow == HIGH)
+      switchPrev == switchPressedLevel &&
+      switchNow == switchReleasedLevel)
   {
     unsigned long heldMs = nowMs - switchPressedAt;
 
@@ -461,6 +462,8 @@ void setup()
 
   switchPrev = digitalRead(PRESS_SWITCH_PIN);
   switchLastRaw = switchPrev;
+  switchReleasedLevel = switchPrev;
+  switchPressedLevel = !switchReleasedLevel;
   switchLastRawChangeAt = millis();
   switchArmed = false;
   switchPressActive = false;
@@ -469,6 +472,8 @@ void setup()
   Serial.println("");
   Serial.println("NANO_R4_PUMP READY");
   Serial.println(FW_VERSION);
+  Serial.print("SWITCH RELEASED LEVEL=");
+  Serial.println(switchReleasedLevel == HIGH ? "HIGH" : "LOW");
   printStatus();
 }
 

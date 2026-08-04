@@ -6,7 +6,7 @@ Control station for a Prokera filling pump using an Arduino Nano R4, a CL42T ste
 
 Active Nano R4 sketch/app label:
 
-`V3-1 Nano R4 Peristaltic filling by G.C.`
+`V3-2 Nano R4 Peristaltic filling by G.C.`
 
 Includes:
 
@@ -16,7 +16,8 @@ Includes:
 - PURGE app button: fixed 15000 steps using the current speed.
 - Physical press switch short press: normal run.
 - Physical press switch long press, 3 seconds or more: purge run.
-- Switch guard: at power-up, the switch must be released and stable for 1 second before switch presses are accepted.
+- CL42T ENA is forced active so the motor remains enabled.
+- Switch guard learns the released switch state at power-up, so NO or NC contacts can be used as long as the switch is not pressed during power-up.
 - Silent VBS launcher so the PowerShell console stays hidden.
 - Pharmaceutical laboratory style technical manual.
 
@@ -36,7 +37,7 @@ The purge run does not overwrite the normal configured step count.
 - USB serial: `115200`.
 - Press switch short press: normal run.
 - Press switch long press, 3 seconds or more: purge run.
-- Switch input guard: released and stable for 1 second before arming.
+- Switch input guard: learned released state must be stable for 1 second before arming.
 
 ## CL42T Common-Anode Wiring
 
