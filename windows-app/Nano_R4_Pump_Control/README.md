@@ -1,8 +1,8 @@
-# V3-2 Nano R4 Peristaltic filling by G.C.
+# V3-3 Nano R4 Peristaltic filling by G.C.
 
 USB/COM pump controller for **Arduino Nano R4** and CL42T driver.
 
-Version 3.1 adds a switch guard so the pump only starts from a confirmed physical switch contact or an explicit USB command. At power-up, the switch must be released and stable for 1 second before switch presses are accepted.
+Version 3.3 restores the working Nano pin map and keeps the switch guard so the pump only starts from a confirmed physical switch contact or an explicit USB command.
 
 ## Files
 
@@ -30,8 +30,8 @@ PUL+ -> regulated +5V
 DIR+ -> regulated +5V
 ENA disconnected
 
-PUL- -> Nano R4 A5
-DIR- -> Nano R4 D2
+PUL- -> Nano R4 D2
+DIR- -> Nano R4 A5
 
 Press switch -> A2 and GND
 ```
@@ -40,7 +40,7 @@ If ENA control is needed later:
 
 ```text
 ENA+ -> regulated +5V
-ENA- -> Nano R4 A1
+ENA- -> Nano R4 A1, optional. If ENA causes the driver to disable, leave ENA disconnected.
 ```
 
 ## Power

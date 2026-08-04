@@ -22,11 +22,11 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-2 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-3 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
-#define STEP_PUMP A5
-#define DIR_PUMP  2
+#define STEP_PUMP 2
+#define DIR_PUMP  A5
 #define ENA_PUMP  A1
 
 #define PRESS_SWITCH_PIN A2
@@ -45,14 +45,13 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 // ---------------- STEPPER DRIVER LOGIC ----------------
 // Common anode: PUL+ / DIR+ to regulated +5V.
 // The Nano R4 controls the negative side of each CL42T input.
-// STEP is active when PUL- is pulled LOW.
-#define STEP_IDLE_LEVEL HIGH
-#define STEP_ACTIVE_LEVEL LOW
+// Matches the working Nano wiring/test sketch.
+#define STEP_IDLE_LEVEL LOW
+#define STEP_ACTIVE_LEVEL HIGH
 
-// ENA is forced active so the CL42T stays enabled at all times.
-// Common-anode input: ENA+ -> +5V, ENA- -> ENA_PUMP.
-#define DRIVER_ENABLE_LEVEL LOW
-#define DRIVER_DISABLE_LEVEL LOW
+// Keep the CL42T enabled. If ENA causes trouble, leave ENA disconnected.
+#define DRIVER_ENABLE_LEVEL HIGH
+#define DRIVER_DISABLE_LEVEL HIGH
 
 // If pump turns the wrong way, change this to LOW.
 #define PUMP_DIR_CW HIGH

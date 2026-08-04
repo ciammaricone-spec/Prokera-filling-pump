@@ -6,7 +6,7 @@ Control station for a Prokera filling pump using an Arduino Nano R4, a CL42T ste
 
 Active Nano R4 sketch/app label:
 
-`V3-2 Nano R4 Peristaltic filling by G.C.`
+`V3-3 Nano R4 Peristaltic filling by G.C.`
 
 Includes:
 
@@ -16,7 +16,8 @@ Includes:
 - PURGE app button: fixed 15000 steps using the current speed.
 - Physical press switch short press: normal run.
 - Physical press switch long press, 3 seconds or more: purge run.
-- CL42T ENA is forced active so the motor remains enabled.
+- Restored working Nano R4 pin map: `PUL-` on `D2`, `DIR-` on `A5`.
+- CL42T ENA is kept enabled. If ENA causes disable behavior, leave ENA disconnected.
 - Switch guard learns the released switch state at power-up, so NO or NC contacts can be used as long as the switch is not pressed during power-up.
 - Silent VBS launcher so the PowerShell console stays hidden.
 - Pharmaceutical laboratory style technical manual.
@@ -44,11 +45,11 @@ The purge run does not overwrite the normal configured step count.
 | CL42T | Arduino Nano R4 |
 | --- | --- |
 | `PUL+` | regulated `5V` |
-| `PUL-` | `A5` |
+| `PUL-` | `D2` |
 | `DIR+` | regulated `5V` |
-| `DIR-` | `D2` |
+| `DIR-` | `A5` |
 | `ENA+` | regulated `5V`, optional |
-| `ENA-` | `A1`, optional |
+| `ENA-` | `A1`, optional. Leave disconnected if it disables the driver. |
 | Press switch | `A2` and `GND` |
 
 Do not use 24V directly with Arduino pins. For direct Arduino-to-CL42T wiring, use regulated 5V on `PUL+`, `DIR+`, and `ENA+`.
