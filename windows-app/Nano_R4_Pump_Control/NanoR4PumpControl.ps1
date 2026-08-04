@@ -7,7 +7,7 @@ $script:lastSteps = 32000
 $script:lastSpeed = 210
 $script:lastDone = 0
 $script:purgeMode = $false
-$appTitle = "V3-4 Nano R4 Peristaltic filling by G.C."
+$appTitle = "V3-5 Nano R4 Peristaltic filling by G.C."
 
 $colorBg = [System.Drawing.Color]::FromArgb(22, 25, 30)
 $colorPanel = [System.Drawing.Color]::FromArgb(34, 39, 46)

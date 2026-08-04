@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-4 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-5 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP 2
@@ -115,10 +115,7 @@ bool validSpeed(unsigned long speedUs)
 bool readStoredConfig(PumpConfig &stored)
 {
 #if HAS_EEPROM
-  uint8_t *ptr = (uint8_t *)&stored;
-  for (unsigned int i = 0; i < sizeof(PumpConfig); i++)
-    ptr[i] = EEPROM.read(EEPROM_ADDR + i);
-
+  EEPROM.get(EEPROM_ADDR, stored);
   return stored.magic == CONFIG_MAGIC &&
          validSteps(stored.steps) &&
          validSpeed(stored.speedUs);
@@ -132,10 +129,8 @@ bool writeStoredConfig()
 {
 #if HAS_EEPROM
   config.magic = CONFIG_MAGIC;
-
-  const uint8_t *ptr = (const uint8_t *)&config;
-  for (unsigned int i = 0; i < sizeof(PumpConfig); i++)
-    EEPROM.update(EEPROM_ADDR + i, ptr[i]);
+  EEPROM.put(EEPROM_ADDR, config);
+  delay(100);
 
   PumpConfig verify;
   if (!readStoredConfig(verify))
