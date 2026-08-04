@@ -7,7 +7,7 @@ $script:lastSteps = 32000
 $script:lastSpeed = 210
 $script:lastDone = 0
 $script:purgeMode = $false
-$appTitle = "V3-5 Nano R4 Peristaltic filling by G.C."
+$appTitle = "V3-6 Nano R4 Peristaltic filling by G.C."
 
 $colorBg = [System.Drawing.Color]::FromArgb(22, 25, 30)
 $colorPanel = [System.Drawing.Color]::FromArgb(34, 39, 46)
@@ -534,9 +534,7 @@ $btnSet.Size = New-Object System.Drawing.Size(78, 40)
 Style-Button $btnSet $colorBlue
 $btnSet.Enabled = $false
 $btnSet.Add_Click({
-    Send-Command ("SET STEPS " + [int]$numSteps.Value)
-    Start-Sleep -Milliseconds 100
-    Send-Command ("SET SPEED " + [int]$numSpeed.Value)
+    Send-Command ("SET CONFIG " + [int]$numSteps.Value + " " + [int]$numSpeed.Value)
 })
 $buttonsPanel.Controls.Add($btnSet)
 

@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-5 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-6 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP 2
@@ -130,7 +130,7 @@ bool writeStoredConfig()
 #if HAS_EEPROM
   config.magic = CONFIG_MAGIC;
   EEPROM.put(EEPROM_ADDR, config);
-  delay(100);
+  delay(250);
 
   PumpConfig verify;
   if (!readStoredConfig(verify))
@@ -413,9 +413,40 @@ void handleCommand(String line)
 
     config.steps = stepsValue;
     config.speedUs = speedValue;
-    printSaveResult();
     printStatus();
     startPumpRun();
+    return;
+  }
+
+  if (line.startsWith("SET CONFIG "))
+  {
+    long stepsValue = 0;
+    unsigned long speedValue = 0;
+
+    int parsed = sscanf(line.c_str(), "SET CONFIG %ld %lu", &stepsValue, &speedValue);
+
+    if (parsed != 2)
+    {
+      Serial.println("ERR CONFIG FORMAT");
+      return;
+    }
+
+    if (!validSteps(stepsValue))
+    {
+      Serial.println("ERR STEPS RANGE");
+      return;
+    }
+
+    if (!validSpeed(speedValue))
+    {
+      Serial.println("ERR SPEED RANGE");
+      return;
+    }
+
+    config.steps = stepsValue;
+    config.speedUs = speedValue;
+    printSaveResult();
+    printStatus();
     return;
   }
 
