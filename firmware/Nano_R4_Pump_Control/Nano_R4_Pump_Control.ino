@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-3 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-4 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP 2
@@ -112,33 +112,71 @@ bool validSpeed(unsigned long speedUs)
   return speedUs >= MIN_PUMP_SPEED_US && speedUs <= MAX_PUMP_SPEED_US;
 }
 
-void loadConfig()
+bool readStoredConfig(PumpConfig &stored)
 {
 #if HAS_EEPROM
-  EEPROM.get(EEPROM_ADDR, config);
+  uint8_t *ptr = (uint8_t *)&stored;
+  for (unsigned int i = 0; i < sizeof(PumpConfig); i++)
+    ptr[i] = EEPROM.read(EEPROM_ADDR + i);
 
-  if (config.magic != CONFIG_MAGIC ||
-      !validSteps(config.steps) ||
-      !validSpeed(config.speedUs))
-  {
-    config.magic = CONFIG_MAGIC;
-    config.steps = DEFAULT_PUMP_STEPS;
-    config.speedUs = DEFAULT_PUMP_SPEED_US;
-    EEPROM.put(EEPROM_ADDR, config);
-  }
+  return stored.magic == CONFIG_MAGIC &&
+         validSteps(stored.steps) &&
+         validSpeed(stored.speedUs);
 #else
-  config.magic = CONFIG_MAGIC;
-  config.steps = DEFAULT_PUMP_STEPS;
-  config.speedUs = DEFAULT_PUMP_SPEED_US;
+  (void)stored;
+  return false;
 #endif
 }
 
-void saveConfig()
+bool writeStoredConfig()
+{
+#if HAS_EEPROM
+  config.magic = CONFIG_MAGIC;
+
+  const uint8_t *ptr = (const uint8_t *)&config;
+  for (unsigned int i = 0; i < sizeof(PumpConfig); i++)
+    EEPROM.update(EEPROM_ADDR + i, ptr[i]);
+
+  PumpConfig verify;
+  if (!readStoredConfig(verify))
+    return false;
+
+  return verify.steps == config.steps &&
+         verify.speedUs == config.speedUs;
+#else
+  return false;
+#endif
+}
+
+void loadConfig()
+{
+  PumpConfig stored;
+
+  if (readStoredConfig(stored))
+  {
+    config = stored;
+  }
+  else
+  {
+  config.magic = CONFIG_MAGIC;
+  config.steps = DEFAULT_PUMP_STEPS;
+  config.speedUs = DEFAULT_PUMP_SPEED_US;
+    writeStoredConfig();
+  }
+}
+
+bool saveConfig()
 {
   config.magic = CONFIG_MAGIC;
-#if HAS_EEPROM
-  EEPROM.put(EEPROM_ADDR, config);
-#endif
+  return writeStoredConfig();
+}
+
+void printSaveResult()
+{
+  if (saveConfig())
+    Serial.println("OK SAVE");
+  else
+    Serial.println("ERR SAVE VERIFY");
 }
 
 void printStatus()
@@ -347,6 +385,13 @@ void handleCommand(String line)
     return;
   }
 
+  if (line == "SAVE")
+  {
+    printSaveResult();
+    printStatus();
+    return;
+  }
+
   if (line.startsWith("RUN "))
   {
     long stepsValue = 0;
@@ -373,7 +418,7 @@ void handleCommand(String line)
 
     config.steps = stepsValue;
     config.speedUs = speedValue;
-    saveConfig();
+    printSaveResult();
     printStatus();
     startPumpRun();
     return;
@@ -396,8 +441,8 @@ void handleCommand(String line)
     }
 
     config.steps = value;
-    saveConfig();
     Serial.println("OK STEPS");
+    printSaveResult();
     printStatus();
     return;
   }
@@ -413,8 +458,8 @@ void handleCommand(String line)
     }
 
     config.speedUs = value;
-    saveConfig();
     Serial.println("OK SPEED");
+    printSaveResult();
     printStatus();
     return;
   }

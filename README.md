@@ -6,7 +6,7 @@ Control station for a Prokera filling pump using an Arduino Nano R4, a CL42T ste
 
 Active Nano R4 sketch/app label:
 
-`V3-3 Nano R4 Peristaltic filling by G.C.`
+`V3-4 Nano R4 Peristaltic filling by G.C.`
 
 Includes:
 
@@ -18,6 +18,7 @@ Includes:
 - Physical press switch long press, 3 seconds or more: purge run.
 - Restored working Nano R4 pin map: `PUL-` on `D2`, `DIR-` on `A5`.
 - CL42T ENA is kept enabled. If ENA causes disable behavior, leave ENA disconnected.
+- EEPROM save verification: the controller prints `OK SAVE` or `ERR SAVE VERIFY` after saving settings.
 - Switch guard learns the released switch state at power-up, so NO or NC contacts can be used as long as the switch is not pressed during power-up.
 - Silent VBS launcher so the PowerShell console stays hidden.
 - Pharmaceutical laboratory style technical manual.
