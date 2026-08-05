@@ -21,6 +21,10 @@ Includes:
 
 The purge run does not overwrite the normal configured step count.
 
+## Mechanical Model
+
+![Prokera automatic pump mechanical render](docs/technical-manual/assets/pks-auto-pump-render.jpg)
+
 ## Contents
 
 - `firmware/Nano_R4_Pump_Control/Nano_R4_Pump_Control.ino` - Arduino Nano R4 firmware.
