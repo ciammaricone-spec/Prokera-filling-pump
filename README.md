@@ -30,6 +30,7 @@ The purge run does not overwrite the normal configured step count.
 
 - `firmware/Nano_R4_Pump_Control/Nano_R4_Pump_Control.ino` - Arduino Nano R4 firmware.
 - `windows-app/Nano_R4_Pump_Control/` - Nano R4 Windows app, launchers, and app README.
+- `docs/technical-manual/` - current technical manual document.
 - `docs/technical-manual/` - Nano R4 pharmaceutical laboratory style technical manual.
 
 ## Default Settings
