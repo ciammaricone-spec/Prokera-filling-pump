@@ -1,4 +1,4 @@
-# V3-6 Nano R4 Peristaltic filling by G.C.
+# V3-7 Nano R4 Peristaltic filling by G.C.
 
 USB/COM pump controller for **Arduino Nano R4** and CL42T driver.
 

@@ -6,7 +6,7 @@ Control station for a Prokera filling pump using an Arduino Nano R4, a CL42T ste
 
 Active Nano R4 sketch/app label:
 
-`V3-6 Nano R4 Peristaltic filling by G.C.`
+`V3-7 Nano R4 Peristaltic filling by G.C.`
 
 Includes:
 
@@ -20,7 +20,8 @@ Includes:
 - CL42T ENA is kept enabled. If ENA causes disable behavior, leave ENA disconnected.
 - EEPROM save verification using `EEPROM.put()` / `EEPROM.get()`: the controller prints `OK SAVE` or `ERR SAVE VERIFY` after saving settings.
 - The Windows Save button uses one atomic `SET CONFIG <steps> <speed>` command to avoid back-to-back EEPROM writes.
-- Switch guard learns the released switch state at power-up, so NO or NC contacts can be used as long as the switch is not pressed during power-up.
+- Standby switch guard: fixed fail-safe switch mode, NO contact to GND, released `HIGH`, pressed `LOW`.
+- Longer switch filtering to prevent unintended standby starts from cable noise.
 - Silent VBS launcher so the PowerShell console stays hidden.
 - Pharmaceutical laboratory style technical manual.
 
@@ -46,7 +47,7 @@ The purge run does not overwrite the normal configured step count.
 - USB serial: `115200`.
 - Press switch short press: normal run.
 - Press switch long press, 3 seconds or more: purge run.
-- Switch input guard: learned released state must be stable for 1 second before arming.
+- Switch input guard: released state must be stable for 2 seconds before arming, and press must last at least 350 ms.
 
 ## CL42T Common-Anode Wiring
 
@@ -58,9 +59,11 @@ The purge run does not overwrite the normal configured step count.
 | `DIR-` | `A5` |
 | `ENA+` | regulated `5V`, optional |
 | `ENA-` | `A1`, optional. Leave disconnected if it disables the driver. |
-| Press switch | `A2` and `GND` |
+| Press switch | NO contact to `A2`, COM to `GND` |
 
 Do not use 24V directly with Arduino pins. For direct Arduino-to-CL42T wiring, use regulated 5V on `PUL+`, `DIR+`, and `ENA+`.
+
+For long switch cables, add an external `10k` pull-up from `A2` to `5V`. If standby starts still occur, add a `0.1 uF` capacitor from `A2` to `GND`.
 
 ## How To Use
 

@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-6 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-7 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP 2
@@ -57,16 +57,17 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 #define PUMP_DIR_CW HIGH
 
 // ---------------- INPUT LOGIC ----------------
-// Learns the released switch level at startup so NO or NC contacts work.
-bool switchReleasedLevel = HIGH;
-bool switchPressedLevel = LOW;
+// Fail-safe switch wiring: NO contact to GND, released = HIGH, pressed = LOW.
+// Use an external 10k pull-up to +5V and/or 0.1 uF cap to GND for long cables.
+const bool SWITCH_RELEASED_LEVEL = HIGH;
+const bool SWITCH_PRESSED_LEVEL = LOW;
 
 // ---------------- TIMING ----------------
 const unsigned long DEBOUNCE_MS = 50;
 const unsigned long POST_RUN_LOCKOUT_MS = 500;
 const unsigned long PURGE_HOLD_MS = 3000;
-const unsigned long SWITCH_ARM_RELEASE_MS = 1000;
-const unsigned long SWITCH_MIN_PRESS_MS = 100;
+const unsigned long SWITCH_ARM_RELEASE_MS = 2000;
+const unsigned long SWITCH_MIN_PRESS_MS = 350;
 
 const uint32_t CONFIG_MAGIC = 0x50554D50UL; // "PUMP"
 const int EEPROM_ADDR = 0;
@@ -97,6 +98,7 @@ bool switchPrev = HIGH;
 bool switchArmed = false;
 bool switchPressActive = false;
 bool switchLastRaw = HIGH;
+bool switchEnabled = true;
 unsigned long switchPressedAt = 0;
 unsigned long switchLastRawChangeAt = 0;
 
@@ -257,6 +259,9 @@ void finishPumpRun()
 
 void handlePressSwitch(unsigned long nowMs)
 {
+  if (!switchEnabled)
+    return;
+
   bool rawSwitch = digitalRead(PRESS_SWITCH_PIN);
 
   if (rawSwitch != switchLastRaw)
@@ -280,7 +285,7 @@ void handlePressSwitch(unsigned long nowMs)
 
   if (!switchArmed)
   {
-    if (switchNow == switchReleasedLevel &&
+    if (switchNow == SWITCH_RELEASED_LEVEL &&
         (nowMs - switchLastRawChangeAt) >= SWITCH_ARM_RELEASE_MS)
     {
       switchArmed = true;
@@ -292,8 +297,8 @@ void handlePressSwitch(unsigned long nowMs)
   }
 
   if (!switchPressActive &&
-      switchPrev == switchReleasedLevel &&
-      switchNow == switchPressedLevel)
+      switchPrev == SWITCH_RELEASED_LEVEL &&
+      switchNow == SWITCH_PRESSED_LEVEL)
   {
     switchPressActive = true;
     switchPressedAt = nowMs;
@@ -301,8 +306,8 @@ void handlePressSwitch(unsigned long nowMs)
   }
 
   if (switchPressActive &&
-      switchPrev == switchPressedLevel &&
-      switchNow == switchReleasedLevel)
+      switchPrev == SWITCH_PRESSED_LEVEL &&
+      switchNow == SWITCH_RELEASED_LEVEL)
   {
     unsigned long heldMs = nowMs - switchPressedAt;
 
@@ -384,6 +389,27 @@ void handleCommand(String line)
   {
     printSaveResult();
     printStatus();
+    return;
+  }
+
+  if (line == "SWITCH OFF")
+  {
+    switchEnabled = false;
+    switchArmed = false;
+    switchPressActive = false;
+    Serial.println("OK SWITCH OFF");
+    return;
+  }
+
+  if (line == "SWITCH ON")
+  {
+    switchEnabled = true;
+    switchArmed = false;
+    switchPressActive = false;
+    switchLastRaw = digitalRead(PRESS_SWITCH_PIN);
+    switchPrev = switchLastRaw;
+    switchLastRawChangeAt = millis();
+    Serial.println("OK SWITCH ON");
     return;
   }
 
@@ -532,8 +558,6 @@ void setup()
 
   switchPrev = digitalRead(PRESS_SWITCH_PIN);
   switchLastRaw = switchPrev;
-  switchReleasedLevel = switchPrev;
-  switchPressedLevel = !switchReleasedLevel;
   switchLastRawChangeAt = millis();
   switchArmed = false;
   switchPressActive = false;
@@ -542,8 +566,7 @@ void setup()
   Serial.println("");
   Serial.println("NANO_R4_PUMP READY");
   Serial.println(FW_VERSION);
-  Serial.print("SWITCH RELEASED LEVEL=");
-  Serial.println(switchReleasedLevel == HIGH ? "HIGH" : "LOW");
+  Serial.println("SWITCH MODE=NO_TO_GND RELEASED=HIGH PRESSED=LOW");
   printStatus();
 }
 
