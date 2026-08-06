@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-10 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-11 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP 2
@@ -60,7 +60,6 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 const unsigned long DEBOUNCE_MS = 80;
 const unsigned long POST_RUN_LOCKOUT_MS = 500;
 const unsigned long PURGE_HOLD_MS = 3000;
-const unsigned long SWITCH_ARM_RELEASE_MS = 2000;
 const unsigned long SWITCH_MIN_PRESS_MS = 150;
 
 const uint32_t CONFIG_MAGIC = 0x50554D50UL; // "PUMP"
@@ -88,12 +87,11 @@ long activeRunSteps = DEFAULT_PUMP_STEPS;
 unsigned long lastPumpPulse = 0;
 unsigned long runEndedAt = 0;
 
-bool switchPrev = HIGH;
-bool switchArmed = false;
+bool switchStable = LOW;
 bool switchPressActive = false;
 bool switchLastRaw = HIGH;
-bool switchReleasedLevel = HIGH;
 bool switchEnabled = true;
+bool purgeStartedFromHold = false;
 unsigned long switchPressedAt = 0;
 unsigned long switchLastRawChangeAt = 0;
 
@@ -274,39 +272,38 @@ void handlePressSwitch(unsigned long nowMs)
   if (machineState != IDLE ||
       (nowMs - runEndedAt) < POST_RUN_LOCKOUT_MS)
   {
-    switchPrev = switchNow;
+    switchStable = switchNow;
     return;
   }
 
-  if (!switchArmed)
-  {
-    if (switchNow == switchReleasedLevel &&
-        (nowMs - switchLastRawChangeAt) >= SWITCH_ARM_RELEASE_MS)
-    {
-      switchArmed = true;
-      Serial.println("SWITCH READY");
-    }
-
-    switchPrev = switchNow;
-    return;
-  }
-
-  if (switchPrev == switchReleasedLevel &&
-      switchNow != switchReleasedLevel)
+  if (!switchPressActive &&
+      switchStable == LOW &&
+      switchNow == HIGH)
   {
     switchPressActive = true;
+    purgeStartedFromHold = false;
     switchPressedAt = nowMs;
     Serial.println("SWITCH PRESSED");
   }
 
   if (switchPressActive &&
-      switchPrev != switchReleasedLevel &&
-      switchNow == switchReleasedLevel)
+      !purgeStartedFromHold &&
+      switchNow == HIGH &&
+      (nowMs - switchPressedAt) >= PURGE_HOLD_MS)
+  {
+    purgeStartedFromHold = true;
+    switchPressActive = false;
+    Serial.println("SWITCH HOLD - PURGE");
+    startPumpRunFixed(PURGE_STEPS);
+  }
+
+  if (switchPressActive &&
+      switchStable == HIGH &&
+      switchNow == LOW)
   {
     unsigned long heldMs = nowMs - switchPressedAt;
 
     switchPressActive = false;
-    switchArmed = false;
 
     if (heldMs < SWITCH_MIN_PRESS_MS)
     {
@@ -324,7 +321,7 @@ void handlePressSwitch(unsigned long nowMs)
     }
   }
 
-  switchPrev = switchNow;
+  switchStable = switchNow;
 }
 
 void servicePump(unsigned long nowMicros)
@@ -389,8 +386,8 @@ void handleCommand(String line)
   if (line == "SWITCH OFF")
   {
     switchEnabled = false;
-    switchArmed = false;
     switchPressActive = false;
+    purgeStartedFromHold = false;
     Serial.println("OK SWITCH OFF");
     return;
   }
@@ -398,11 +395,10 @@ void handleCommand(String line)
   if (line == "SWITCH ON")
   {
     switchEnabled = true;
-    switchArmed = false;
     switchPressActive = false;
+    purgeStartedFromHold = false;
     switchLastRaw = digitalRead(PRESS_SWITCH_PIN);
-    switchPrev = switchLastRaw;
-    switchReleasedLevel = switchPrev;
+    switchStable = switchLastRaw;
     switchLastRawChangeAt = millis();
     Serial.println("OK SWITCH ON");
     return;
@@ -551,18 +547,17 @@ void setup()
 
   loadConfig();
 
-  switchPrev = digitalRead(PRESS_SWITCH_PIN);
-  switchLastRaw = switchPrev;
+  switchStable = digitalRead(PRESS_SWITCH_PIN);
+  switchLastRaw = switchStable;
   switchLastRawChangeAt = millis();
-  switchArmed = false;
   switchPressActive = false;
-  switchReleasedLevel = switchPrev;
+  purgeStartedFromHold = false;
   runEndedAt = millis();
 
   Serial.println("");
   Serial.println("NANO_R4_PUMP READY");
   Serial.println(FW_VERSION);
-  Serial.println("SWITCH MODE=AUTO RUN_OR_PURGE_ON_RELEASE");
+  Serial.println("SWITCH MODE=NC_A2_GND RUN_ON_RELEASE PURGE_ON_3S_HOLD");
   printStatus();
 }
 
