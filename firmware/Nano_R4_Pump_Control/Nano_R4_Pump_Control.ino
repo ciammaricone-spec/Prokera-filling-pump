@@ -9,8 +9,8 @@
 // If ENA is used: ENA+ -> +5V, ENA- -> ENA_PUMP
 //
 // PRESS SWITCH:
-// One side to PRESS_SWITCH_PIN, the other side to GND.
-// Uses INPUT_PULLUP, so pressed = LOW.
+// Current machine wiring: NC contact to PRESS_SWITCH_PIN, COM to GND.
+// Uses INPUT_PULLUP, so released = LOW and pressed/open = HIGH.
 // =====================================================
 
 #include <Arduino.h>
@@ -22,7 +22,7 @@
 #define HAS_EEPROM 0
 #endif
 
-#define FW_VERSION "V3-7 Nano R4 Peristaltic filling by G.C."
+#define FW_VERSION "V3-8 Nano R4 Peristaltic filling by G.C."
 
 // ---------------- PIN MAP ----------------
 #define STEP_PUMP 2
@@ -57,10 +57,11 @@ const unsigned long MAX_PUMP_SPEED_US = 5000;
 #define PUMP_DIR_CW HIGH
 
 // ---------------- INPUT LOGIC ----------------
-// Fail-safe switch wiring: NO contact to GND, released = HIGH, pressed = LOW.
-// Use an external 10k pull-up to +5V and/or 0.1 uF cap to GND for long cables.
-const bool SWITCH_RELEASED_LEVEL = HIGH;
-const bool SWITCH_PRESSED_LEVEL = LOW;
+// Current machine switch wiring: NC contact to A2, COM to GND.
+// With INPUT_PULLUP: released = LOW, pressed/open = HIGH.
+// If wired to NO instead, swap these two levels.
+const bool SWITCH_RELEASED_LEVEL = LOW;
+const bool SWITCH_PRESSED_LEVEL = HIGH;
 
 // ---------------- TIMING ----------------
 const unsigned long DEBOUNCE_MS = 50;
@@ -566,7 +567,7 @@ void setup()
   Serial.println("");
   Serial.println("NANO_R4_PUMP READY");
   Serial.println(FW_VERSION);
-  Serial.println("SWITCH MODE=NO_TO_GND RELEASED=HIGH PRESSED=LOW");
+  Serial.println("SWITCH MODE=NC_TO_GND RELEASED=LOW PRESSED=HIGH");
   printStatus();
 }
 

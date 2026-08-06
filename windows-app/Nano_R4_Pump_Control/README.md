@@ -1,8 +1,8 @@
-# V3-7 Nano R4 Peristaltic filling by G.C.
+# V3-8 Nano R4 Peristaltic filling by G.C.
 
 USB/COM pump controller for **Arduino Nano R4** and CL42T driver.
 
-Version 3.3 restores the working Nano pin map and keeps the switch guard so the pump only starts from a confirmed physical switch contact or an explicit USB command.
+Version 3.8 keeps the working Nano pin map and uses the NC switch guard so the pump only starts from a confirmed physical switch contact or an explicit USB command.
 
 ## Files
 
@@ -33,7 +33,8 @@ ENA disconnected
 PUL- -> Nano R4 D2
 DIR- -> Nano R4 A5
 
-Press switch -> A2 and GND
+Press switch NC -> A2
+Press switch COM -> GND
 ```
 
 If ENA control is needed later:
@@ -64,8 +65,8 @@ If the test does not move:
 
 1. Keep ENA disconnected.
 2. Verify `PUL+` and `DIR+` have +5V.
-3. Verify `PUL-` is on `A5`.
-4. Verify `DIR-` is on `D2`.
+3. Verify `PUL-` is on `D2`.
+4. Verify `DIR-` is on `A5`.
 5. Verify CL42T motor power, alarm status, and motor wiring.
 
 If the test moves, upload `Nano_R4_Pump_Control.ino` and use the Windows app.
